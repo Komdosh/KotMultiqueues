@@ -68,9 +68,6 @@ internal class MultiqueueImpTest {
     @Test
     fun deleteMax() {
         val value = runBlocking {
-            for (value in values) {
-                multiqueue.insert(value)
-            }
             multiqueue.deleteMax()
         }
 
