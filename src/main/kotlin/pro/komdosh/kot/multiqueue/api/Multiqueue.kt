@@ -3,7 +3,7 @@ package pro.komdosh.kot.multiqueue.api
 interface Multiqueue<T> {
     fun printSize()
 
-    fun getSize(): Int
+    fun getSize(): Long
 
     suspend fun balance()
 

@@ -8,7 +8,7 @@ class MultiqueueImp<T>(
     private val numOfThreads: Int = 2,
     private val numOfQueuesPerThread: Int = 2,
     private val numOfQueues: Int = numOfThreads * numOfQueuesPerThread,
-    private val internalQueues: List<PriorityQueue<T>> = listOf(),
+    private val internalQueues: List<PriorityQueue<T>> = MutableList<PriorityQueue<T>>(numOfQueues) { PriorityQueue() },
     private val locks: Array<Mutex> = Array(numOfQueues) { Mutex() }
 ) : Multiqueue<T> {
 
@@ -16,16 +16,30 @@ class MultiqueueImp<T>(
         TODO("not implemented")
     }
 
-    override fun getSize(): Int {
-        TODO("not implemented")
+    override fun getSize(): Long {
+        var numOfElements: Long = 0;
+        for (i in internalQueues) {
+            numOfElements += i.size
+        }
+
+        return numOfElements;
     }
 
     override suspend fun balance() {
         TODO("not implemented")
     }
 
+    fun getRandomQueueIndex(): Int {
+        return Random().nextInt(numOfQueues / 2)
+    }
+
     override suspend fun insert(el: T) {
-        TODO("not implemented")
+        var queueIndex: Int
+        do {
+            queueIndex = getRandomQueueIndex()
+        } while (!locks[queueIndex].tryLock())
+        internalQueues[queueIndex].add(el)
+        locks[queueIndex].unlock()
     }
 
     override suspend fun insertByThreadId(el: T, threadId: Int) {
