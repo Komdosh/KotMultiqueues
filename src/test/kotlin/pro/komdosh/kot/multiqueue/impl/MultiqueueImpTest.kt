@@ -1,44 +1,101 @@
 package pro.komdosh.kot.multiqueue.impl
 
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import pro.komdosh.kot.multiqueue.api.Multiqueue
 
 internal class MultiqueueImpTest {
 
-    private val multiqueue: Multiqueue<Int> = MultiqueueImp()
+    private val multiqueue: Multiqueue<Int> = MultiqueueImp(numOfThreads = 6)
+    private val length = 5
+    private val values: Array<Int> = Array(length) { i -> i + 1 }
 
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     fun setUp() {
+        runBlocking {
+            for (value in values) {
+                multiqueue.insert(value)
+            }
+        }
     }
 
-    @org.junit.jupiter.api.AfterEach
-    fun tearDown() {
-    }
-
-    @org.junit.jupiter.api.Test
+    @Test
     fun getSize() {
+        runBlocking {
+            multiqueue.insert(0)
+            multiqueue.insert(1)
+            multiqueue.insert(2)
+        }
+        assert(multiqueue.getSize() == 3)
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun balance() {
+        runBlocking { multiqueue.balance() }
+        assert(multiqueue.getSize() == length)
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun insert() {
+        runBlocking { multiqueue.insert(0) }
+        assert(multiqueue.getSize() == 1)
+
+        runBlocking { multiqueue.insert(0) }
+        assert(multiqueue.getSize() == 2)
+
+        runBlocking {
+            multiqueue.deleteMax()
+            multiqueue.insert(0)
+        }
+        assert(multiqueue.getSize() == 2)
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun insertByThreadId() {
+        runBlocking { multiqueue.insertByThreadId(0, 1) }
+        assert(multiqueue.getSize() == 1)
+
+        runBlocking { multiqueue.insertByThreadId(0, 2) }
+        assert(multiqueue.getSize() == 2)
+
+        runBlocking {
+            multiqueue.deleteMax()
+            multiqueue.insertByThreadId(0, 3)
+        }
+        assert(multiqueue.getSize() == 2)
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun deleteMax() {
+        val value = runBlocking {
+            for (value in values) {
+                multiqueue.insert(value)
+            }
+            multiqueue.deleteMax()
+        }
+
+        assert(values.contains(value))
+        assert(multiqueue.getSize() == length - 1)
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun deleteMaxByThreadId() {
+        val value = runBlocking {
+            multiqueue.deleteMaxByThreadId(1)
+        }
+
+        assert(values.contains(value))
+        assert(multiqueue.getSize() == length - 1)
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun deleteMaxByThreadOwn() {
+        val value = runBlocking {
+            multiqueue.deleteMaxByThreadOwn(2)
+        }
+
+        assert(values.contains(value))
+        assert(multiqueue.getSize() == length - 1)
     }
 }
