@@ -13,7 +13,9 @@ class MultiqueueImp<T>(
 ) : Multiqueue<T> {
 
     override fun printSize() {
-        TODO("not implemented")
+        internalQueues.forEachIndexed { i, q ->
+            println("Queue $i has size ${q.size}")
+        }
     }
 
     override fun getSize(): Long {
@@ -21,7 +23,6 @@ class MultiqueueImp<T>(
         for (i in internalQueues) {
             numOfElements += i.size
         }
-
         return numOfElements;
     }
 
