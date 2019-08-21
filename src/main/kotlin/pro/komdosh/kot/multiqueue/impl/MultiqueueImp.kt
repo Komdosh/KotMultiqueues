@@ -27,7 +27,28 @@ class MultiqueueImp<T : Comparable<T>>(
     }
 
     override suspend fun balance() {
-        TODO("not implemented")
+        val sizes = IntArray(numOfQueues) { i -> internalQueues[i].size }
+
+        val indexWithMax: Int = sizes.withIndex().maxBy { it.value }!!.index
+        val indexWithMin: Int = sizes.withIndex().minBy { it.value }!!.index
+
+        val sumOfSizes: Int = sizes.sum()
+        val averageSize = sumOfSizes / numOfQueues
+        val sizeCoeff = 1.2
+        val transferCoeff = 0.3
+
+        if (sizes[indexWithMax] > averageSize * sizeCoeff) { // if max sized queue is 20% bigger and more than average
+            while (!locks[indexWithMax].tryLock());
+            while (!locks[indexWithMin].tryLock());
+            val sizeOfTransfer =
+                (sizes[indexWithMax] * transferCoeff).toInt() // 30% elements transfer to smallest queue
+            for (i in 0..sizeOfTransfer) {
+                internalQueues[indexWithMin].add(internalQueues[indexWithMax].peek())
+                internalQueues[indexWithMax].poll()
+            }
+            locks[indexWithMax].unlock()
+            locks[indexWithMin].unlock()
+        }
     }
 
     fun getRandomQueueIndexHalf(): Int {
@@ -96,7 +117,18 @@ class MultiqueueImp<T : Comparable<T>>(
     }
 
     override suspend fun insertByThreadId(el: T, threadId: Int) {
-        TODO("not implemented")
+        var queueIndex: Int
+        do {
+            val halfOfThreads = numOfThreads / 2;
+
+            if (threadId < halfOfThreads) {
+                queueIndex = getRandomQueueIndexHalf()
+            } else {
+                queueIndex = getRandomQueueIndexHalf() + numOfQueues / 2;
+            }
+        } while (!locks[queueIndex].tryLock());
+        internalQueues[queueIndex].add(el);
+        locks[queueIndex].unlock();
     }
 
     override suspend fun deleteMax(): T? {
@@ -120,12 +152,12 @@ class MultiqueueImp<T : Comparable<T>>(
     override suspend fun deleteMaxByThreadId(threadId: Int): T? {
         var queueIndex: Int
         do {
-            queueIndex = getRandomHalfIndex(threadId)
+            queueIndex = getTopRandomHalfIndex(threadId)
         } while (queueIndex == -1 || !locks[queueIndex].tryLock())
         return getTopValue(queueIndex)
     }
 
-    private fun getRandomHalfIndex(threadId: Int): Int {
+    private fun getTopRandomHalfIndex(threadId: Int): Int {
         var queueIndex: Int
         val secondQueueIndex: Int
         val halfOfThreads = numOfThreads / 2
