@@ -38,7 +38,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return Random().nextInt(numOfQueues)
     }
 
-    private fun getQueIndexForDelete(queueIndex: Int, secondQueueIndex: Int): Int? {
+    private fun getQueueIndexForDelete(queueIndex: Int, secondQueueIndex: Int): Int? {
         val firstQueue = internalQueues[queueIndex]
         val secondQueue = internalQueues[secondQueueIndex]
         val foundQueueIndex: Int? = if (firstQueue.isEmpty() && secondQueue.isEmpty()) {
@@ -101,21 +101,58 @@ class MultiqueueImp<T : Comparable<T>>(
 
     override suspend fun deleteMax(): T? {
         var queueIndex: Int
-        var secondQueueIndex: Int
         do {
-            queueIndex = getRandomQueueIndex()
-            secondQueueIndex = getRandomQueueIndex()
-            queueIndex = getQueIndexForDelete(queueIndex, secondQueueIndex) ?: -1
+            queueIndex = randomIndexSelection()
         } while (queueIndex == -1 || !locks[queueIndex].tryLock())
         return getTopValue(queueIndex)
     }
 
-    override suspend fun deleteMaxByThreadId(threadId: Int): T {
-        TODO("not implemented")
+    private fun randomIndexSelection(): Int {
+        var queueIndex = getRandomQueueIndex()
+        var secondQueueIndex: Int
+        do {
+            secondQueueIndex = getRandomQueueIndex()
+        } while (secondQueueIndex == queueIndex)
+        queueIndex = getQueueIndexForDelete(queueIndex, secondQueueIndex) ?: -1
+        return queueIndex
     }
 
-    override suspend fun deleteMaxByThreadOwn(threadId: Int): T {
-        TODO("not implemented")
+    override suspend fun deleteMaxByThreadId(threadId: Int): T? {
+        var queueIndex: Int
+        do {
+            queueIndex = getRandomHalfIndex(threadId)
+        } while (queueIndex == -1 || !locks[queueIndex].tryLock())
+        return getTopValue(queueIndex)
+    }
+
+    private fun getRandomHalfIndex(threadId: Int): Int {
+        var queueIndex: Int
+        val secondQueueIndex: Int
+        val halfOfThreads = numOfThreads / 2
+        if (threadId < halfOfThreads) {
+            queueIndex = getRandomQueueIndexHalf()
+            secondQueueIndex = getRandomQueueIndexHalf()
+        } else {
+            queueIndex = getRandomQueueIndexHalf() + numOfQueues / 2
+            secondQueueIndex = getRandomQueueIndexHalf() + numOfQueues / 2
+        }
+
+        queueIndex = getQueueIndexForDelete(queueIndex, secondQueueIndex) ?: -1
+        return queueIndex
+    }
+
+    override suspend fun deleteMaxByThreadOwn(threadId: Int): T? {
+        var queueIndex: Int = threadId * numOfQueuesPerThread
+        val secondQueueIndex = threadId * numOfQueuesPerThread + 1
+        queueIndex = getQueueIndexForDelete(queueIndex, secondQueueIndex) ?: -1
+        if (queueIndex != -1 && locks[queueIndex].tryLock()) {
+            return getTopValue(queueIndex)
+        }
+
+        do {
+            queueIndex = randomIndexSelection()
+        } while (queueIndex == -1 || !locks[queueIndex].tryLock())
+        return getTopValue(queueIndex)
     }
 
     private fun getTopValue(queueIndex: Int): T? {
