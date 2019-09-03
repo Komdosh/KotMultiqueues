@@ -8,11 +8,14 @@ group = "pro.komdosh"
 version = "0.0.1"
 
 repositories {
+    maven(url = "https://kotlin.bintray.com/kotlinx")
+    maven(url = "https://dl.bintray.com/devexperts/Maven/")
     mavenCentral()
 }
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    testCompileOnly("org.jetbrains.kotlinx:lincheck:2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.0-RC2")
     testImplementation("org.junit.jupiter:junit-jupiter:5.5.1")
 }

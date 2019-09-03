@@ -11,5 +11,4 @@ fun main() {
     }
 
     println(multiqueue.deleteMax())
-
 }

@@ -122,10 +122,10 @@ class MultiqueueImp<T : Comparable<T>>(
         do {
             val halfOfThreads = numOfThreads / 2
 
-            if (threadId < halfOfThreads) {
-                queueIndex = getRandomQueueIndexHalf()
+            queueIndex = if (threadId < halfOfThreads) {
+                getRandomQueueIndexHalf()
             } else {
-                queueIndex = getRandomQueueIndexHalf() + numOfQueues / 2
+                getRandomQueueIndexHalf() + numOfQueues / 2
             }
         } while (!locks[queueIndex].tryLock())
         internalQueues[queueIndex].add(el)
@@ -197,4 +197,28 @@ class MultiqueueImp<T : Comparable<T>>(
         locks[queueIndex].unlock()
         return topValue
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MultiqueueImp<*>
+
+        if (numOfThreads != other.numOfThreads) return false
+        if (numOfQueuesPerThread != other.numOfQueuesPerThread) return false
+        if (numOfQueues != other.numOfQueues) return false
+        if (getSize() != other.getSize()) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = numOfThreads
+        result = 31 * result + numOfQueuesPerThread
+        result = 31 * result + numOfQueues
+        result = 31 * result + getSize().toInt()
+        return result
+    }
+
+
 }
