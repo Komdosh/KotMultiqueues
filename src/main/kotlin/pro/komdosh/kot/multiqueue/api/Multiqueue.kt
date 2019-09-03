@@ -5,12 +5,12 @@ interface Multiqueue<T : Comparable<T>> {
 
     fun getSize(): Long
 
-    suspend fun balance()
+    fun balance()
 
-    suspend fun insert(el: T)
-    suspend fun insertByThreadId(el: T, threadId: Int)
+    fun insert(el: T)
+    fun insertByThreadId(el: T, threadId: Int)
 
-    suspend fun deleteMax(): T?
-    suspend fun deleteMaxByThreadId(threadId: Int): T?
-    suspend fun deleteMaxByThreadOwn(threadId: Int): T?
+    fun deleteMax(): T?
+    fun deleteMaxByThreadId(threadId: Int): T?
+    fun deleteMaxByThreadOwn(threadId: Int): T?
 }

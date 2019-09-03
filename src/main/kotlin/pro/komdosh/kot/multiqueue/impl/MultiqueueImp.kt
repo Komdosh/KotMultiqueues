@@ -19,14 +19,14 @@ class MultiqueueImp<T : Comparable<T>>(
     }
 
     override fun getSize(): Long {
-        var numOfElements: Long = 0;
+        var numOfElements: Long = 0
         for (i in internalQueues) {
             numOfElements += i.size
         }
-        return numOfElements;
+        return numOfElements
     }
 
-    override suspend fun balance() {
+    override fun balance() {
         val sizes = IntArray(numOfQueues) { i -> internalQueues[i].size }
 
         val indexWithMax: Int = sizes.withIndex().maxBy { it.value }!!.index
@@ -40,6 +40,7 @@ class MultiqueueImp<T : Comparable<T>>(
         if (sizes[indexWithMax] > averageSize * sizeCoeff) { // if max sized queue is 20% bigger and more than average
             while (!locks[indexWithMax].tryLock());
             while (!locks[indexWithMin].tryLock());
+
             val sizeOfTransfer =
                 (sizes[indexWithMax] * transferCoeff).toInt() // 30% elements transfer to smallest queue
             for (i in 0..sizeOfTransfer) {
@@ -51,7 +52,7 @@ class MultiqueueImp<T : Comparable<T>>(
         }
     }
 
-    fun getRandomQueueIndexHalf(): Int {
+    private fun getRandomQueueIndexHalf(): Int {
         return Random().nextInt(numOfQueues / 2)
     }
 
@@ -107,7 +108,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return value
     }
 
-    override suspend fun insert(el: T) {
+    override fun insert(el: T) {
         var queueIndex: Int
         do {
             queueIndex = getRandomQueueIndex()
@@ -116,22 +117,22 @@ class MultiqueueImp<T : Comparable<T>>(
         locks[queueIndex].unlock()
     }
 
-    override suspend fun insertByThreadId(el: T, threadId: Int) {
+    override fun insertByThreadId(el: T, threadId: Int) {
         var queueIndex: Int
         do {
-            val halfOfThreads = numOfThreads / 2;
+            val halfOfThreads = numOfThreads / 2
 
             if (threadId < halfOfThreads) {
                 queueIndex = getRandomQueueIndexHalf()
             } else {
-                queueIndex = getRandomQueueIndexHalf() + numOfQueues / 2;
+                queueIndex = getRandomQueueIndexHalf() + numOfQueues / 2
             }
-        } while (!locks[queueIndex].tryLock());
-        internalQueues[queueIndex].add(el);
-        locks[queueIndex].unlock();
+        } while (!locks[queueIndex].tryLock())
+        internalQueues[queueIndex].add(el)
+        locks[queueIndex].unlock()
     }
 
-    override suspend fun deleteMax(): T? {
+    override fun deleteMax(): T? {
         var queueIndex: Int
         do {
             queueIndex = randomIndexSelection()
@@ -149,7 +150,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return queueIndex
     }
 
-    override suspend fun deleteMaxByThreadId(threadId: Int): T? {
+    override fun deleteMaxByThreadId(threadId: Int): T? {
         var queueIndex: Int
         do {
             queueIndex = getTopRandomHalfIndex(threadId)
@@ -173,7 +174,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return queueIndex
     }
 
-    override suspend fun deleteMaxByThreadOwn(threadId: Int): T? {
+    override fun deleteMaxByThreadOwn(threadId: Int): T? {
         var queueIndex: Int = threadId * numOfQueuesPerThread
         val secondQueueIndex = threadId * numOfQueuesPerThread + 1
         queueIndex = getQueueIndexForDelete(queueIndex, secondQueueIndex) ?: -1
