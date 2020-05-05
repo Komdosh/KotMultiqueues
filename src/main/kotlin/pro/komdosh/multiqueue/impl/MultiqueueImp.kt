@@ -1,8 +1,13 @@
-package pro.komdosh.kot.multiqueue.impl
+package pro.komdosh.multiqueue.impl
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withTimeout
 import pro.komdosh.kot.multiqueue.api.Multiqueue
 import java.util.*
+
 
 class MultiqueueImp<T : Comparable<T>>(
     private val numOfThreads: Int = 2,
@@ -39,15 +44,22 @@ class MultiqueueImp<T : Comparable<T>>(
 
         if (sizes[indexWithMax] > averageSize * sizeCoeff) { // if max sized queue is 20% bigger and more than average
             while (!locks[indexWithMax].tryLock());
-            while (!locks[indexWithMin].tryLock());
-            val sizeOfTransfer =
-                (sizes[indexWithMax] * transferCoeff).toInt() // 30% elements transfer to smallest queue
-            for (i in 0..sizeOfTransfer) {
-                internalQueues[indexWithMin].add(internalQueues[indexWithMax].peek())
-                internalQueues[indexWithMax].poll()
+
+            runBlocking(Dispatchers.Default) {
+                withTimeout(TIMEOUT_IN_MILLIS) {
+                    while (!locks[indexWithMin].tryLock());
+
+                    val sizeOfTransfer =
+                        (sizes[indexWithMax] * transferCoeff).toInt() // 30% elements transfer to smallest queue
+                    for (i in 0..sizeOfTransfer) {
+                        internalQueues[indexWithMin].add(internalQueues[indexWithMax].peek())
+                        internalQueues[indexWithMax].poll()
+                    }
+                    locks[indexWithMin].unlock()
+                }
             }
+
             locks[indexWithMax].unlock()
-            locks[indexWithMin].unlock()
         }
     }
 
@@ -195,5 +207,9 @@ class MultiqueueImp<T : Comparable<T>>(
         }
         locks[queueIndex].unlock()
         return topValue
+    }
+
+    companion object {
+        private const val TIMEOUT_IN_MILLIS: Long = 10000
     }
 }

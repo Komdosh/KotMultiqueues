@@ -1,4 +1,4 @@
-package pro.komdosh.kot.multiqueue.impl
+package pro.komdosh.multiqueue.impl
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -7,8 +7,9 @@ import pro.komdosh.kot.multiqueue.api.Multiqueue
 
 internal class MultiqueueImpTest {
 
-    private val multiqueue: Multiqueue<Int> = MultiqueueImp(numOfThreads = 6)
-    private val length = 5L
+    private val multiqueue: Multiqueue<Int> =
+        MultiqueueImp(numOfThreads = 8)
+    private val length = 500L
     private val values: Array<Int> = Array(length.toInt()) { i -> i + 1 }
 
     @BeforeEach
