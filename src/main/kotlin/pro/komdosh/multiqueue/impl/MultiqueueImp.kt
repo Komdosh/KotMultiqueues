@@ -1,6 +1,5 @@
 package pro.komdosh.multiqueue.impl
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -63,7 +62,7 @@ class MultiqueueImp<T : Comparable<T>>(
         }
     }
 
-    fun getRandomQueueIndexHalf(): Int {
+    private fun getRandomQueueIndexHalf(): Int {
         return Random().nextInt(numOfQueues / 2)
     }
 
@@ -119,7 +118,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return value
     }
 
-    override suspend fun insert(el: T) {
+    override fun insert(el: T) {
         var queueIndex: Int
         do {
             queueIndex = getRandomQueueIndex()
@@ -128,7 +127,7 @@ class MultiqueueImp<T : Comparable<T>>(
         locks[queueIndex].unlock()
     }
 
-    override suspend fun insertByThreadId(el: T, threadId: Int) {
+    override fun insertByThreadId(el: T, threadId: Int) {
         var queueIndex: Int
         do {
             val halfOfThreads = numOfThreads / 2;
@@ -143,7 +142,7 @@ class MultiqueueImp<T : Comparable<T>>(
         locks[queueIndex].unlock();
     }
 
-    override suspend fun deleteMax(): T? {
+    override fun deleteMax(): T? {
         var queueIndex: Int
         do {
             queueIndex = randomIndexSelection()
@@ -161,7 +160,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return queueIndex
     }
 
-    override suspend fun deleteMaxByThreadId(threadId: Int): T? {
+    override fun deleteMaxByThreadId(threadId: Int): T? {
         var queueIndex: Int
         do {
             queueIndex = getTopRandomHalfIndex(threadId)
@@ -185,7 +184,7 @@ class MultiqueueImp<T : Comparable<T>>(
         return queueIndex
     }
 
-    override suspend fun deleteMaxByThreadOwn(threadId: Int): T? {
+    override fun deleteMaxByThreadOwn(threadId: Int): T? {
         var queueIndex: Int = threadId * numOfQueuesPerThread
         val secondQueueIndex = threadId * numOfQueuesPerThread + 1
         queueIndex = getQueueIndexForDelete(queueIndex, secondQueueIndex) ?: -1
